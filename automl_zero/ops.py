@@ -1,4 +1,6 @@
+import pyglove as pg
 import numpy as np
+from .config import *
 #from numba import jit, njit
 
 def sigmoid(x):
@@ -21,16 +23,80 @@ def stable_softmax(x):
 
 #FIXME do nothing is identity
 def do_nothing(x):
-    return x
+    pass
 
 def mean_axis(x):
     return np.mean(x,axis=0)
 
 def std_axis(x):
     return np.std(x,axis=0)
+                                                                                             #OP 56-64
 
-##   (OP#:(OP, MAX_ARGS, INPUT_TYPE (0:Scalar,1:Vector,2:Matrix,3:SC/Vector,4:SC/Matrix),
-#      OUTPUT_TYPE (0:Scalar,1:Vector,2:Matrix)))
+def set_constant_scalar(c,_):#op_56 #One constant
+    return c
+    
+"""
+def set_constant_vector(c):#op_57 (i) constant in vector
+    
+    def _():
+        return 
+    return _
+
+    
+def set_constant_matrix(c):#op_58 (i,j) constant in matrix
+"""
+    
+def uniform_scalar(lower, upper):#op_59 # upper and lower 
+    return np.random.uniform(lower, upper, size=(1))#or (1,1)?
+
+    
+def uniform_vector(lower, upper):#op_60 vector
+    return np.random.uniform(lower, upper, size=(X_SHAPE[0],1)) #or (X_SHAPE[0])?
+
+    
+def uniform_matrix(lower, upper):#op_61 matrix
+    return np.random.uniform(lower, upper, size=(X_SHAPE[0],X_SHAPE[1]))
+
+    
+def gaussian_scalar(mean, std):#op_62 #mean and std
+    return np.random.normal(mean,std, size=(1))#or (1,1)?
+    
+def gaussian_vector(mean, std):#op_63 vector
+    return np.random.normal(mean,std,  size=(X_SHAPE[0],1))#or (X_SHAPE[0])?
+    
+
+def gaussian_matrix(mean, std):#op_64 matrix
+    return np.random.normal(mean,std, size=(X_SHAPE[0],X_SHAPE[1]))
+
+
+pred_OP_dict = {0:(np.add,2), #basic
+           1:(np.subtract,2),
+           2:(np.multiply,2),
+           3:(np.divide,2),
+           4:(np.abs,1), 
+           5:(np.reciprocal,1),
+           6:(np.sin,1), 
+           7:(np.cos,1), 
+           8:(np.tan,1),
+           9:(np.log,1),
+           10:(do_nothing,1)}
+
+setup_OP_dict = {
+        0:(set_constant_scalar, 0),
+        1:(uniform_scalar, 0),
+        2:(uniform_vector, 0),
+        3:(uniform_matrix, 0),
+        4:(gaussian_scalar, 0),
+        5:(gaussian_vector, 0),
+        6:(gaussian_matrix, 0)
+    }
+
+OP_dict_sizes = { 
+    "gene_setup":len(setup_OP_dict),
+    "gene_pred":len(pred_OP_dict) 
+}
+
+"""    
 OP_dict_basic = {0:(np.add,2,0,0), 
            1:(np.subtract,2,0,0),
            2:(np.multiply,2,0,0),
@@ -81,3 +147,4 @@ OP_dict_int_2 = {28:(np.add,2,2,2),
                  44:(np.std,2,2,0)
 
                 }
+"""

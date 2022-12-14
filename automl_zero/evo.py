@@ -1,157 +1,197 @@
 import numpy as np
 from automl_zero.config import *
-from automl_zero.ops import OP_dict_basic
-from random import choice, randint, sample
+from automl_zero.ops import pred_OP_dict, setup_OP_dict
+from automl_zero.memory import initialize_memory_limited
+from automl_zero.mutators import mutate_winner
+#from automl_zero.utils import apply_output
+from random import randint, sample
 from copy import deepcopy
 from tqdm import tqdm
-#from numba import jit, njit
-## 
 
-def initialialize_population(X_arr, y_true= None, fitness_func= None, \
-                     population_count = POPULATION_COUNT, op_depth = None, \
-                     memory_size = MEMORY_SIZE , OP_dict = OP_dict_basic, \
-                     max_arg = 2, element_type = "matrix"):
-    genes_list = []
-    #FIXME make memory arr a global variable
-    memory_arr = initialize_memory(memory_size = MEMORY_SIZE, element_type = element_type, matrix_size= MATRIX_SIZE, start=-10, end=10)
+
+def generate_random_gene(OP_dict, 
+    MAX_ARG = 2, X_SHAPE = None,y_shape= None ,OP_DEPTH = None,
+    CONSTANTS_LOW = -100, CONSTANTS_HIGH= 100,CONSTANTS_MAX =2):
+
+    OP_gene = np.random.randint(0,len(OP_dict), size=(OP_DEPTH,1)).astype(int)
+    _, memory_ref_dict = initialize_memory_limited(X_SHAPE, y_shape) # to have correct arg_list_sizes
+    arg_locations = np.random.randint(0, len(memory_ref_dict),size=(OP_DEPTH, MAX_ARG)).astype(int)
+    output_locations = np.random.randint(0, len(memory_ref_dict) ,size=(OP_DEPTH, 1)).astype(int)
+    constants = np.random.uniform(CONSTANTS_LOW,CONSTANTS_HIGH, size=(OP_DEPTH,CONSTANTS_MAX))#gaussian or uniform ??
     
-    for _ in range(population_count):    
+    return OP_gene, arg_locations, output_locations, constants
+
+##TODO Add Initialize Memory
+##TODO Classcize this and allow for extentions through inheritance/mixins
+def initialize_population(X = None, y = None, population_count = POPULATION_COUNT,\
+                          fitness_func=None, \
+                          setup_OP_dict = None, SETUP_OP_DEPTH = None , \
+                          pred_OP_dict = None, PRED_OP_DEPTH = None, \
+                          setup_function = False,
+                          learn_function = False):
+    genes_list = []
+
+    for _ in tqdm(range(population_count)):
         
-        OP_gene = np.random.randint(0,len(OP_dict_basic), size=(OP_DEPTH,1))
-        arg_locations = np.random.randint(0, len(memory_arr),size=(OP_DEPTH, max_arg)).astype(int)
-        output_locations = np.random.randint(0, len(memory_arr) ,size=(OP_DEPTH, 1)).astype(int)    
-        preds = resolve_genome(X_arr,OP_gene, deepcopy(memory_arr), arg_locations, output_locations, OP_dict  )
+
+        genes_temp = {}
+        _, memory_ref_dict = initialize_memory_limited(X.shape, y_true.shape)
+        if setup_function:
+            # Only one memory for both? 
+            gene_setup = generate_random_gene(OP_dict = setup_OP_dict, 
+                                              X_SHAPE = X.shape,
+                                              y_shape = y_true.shape,
+                                              OP_DEPTH = SETUP_OP_DEPTH)
+        else:
+            gene_setup = None
+
+        gene_pred = generate_random_gene(OP_dict = pred_OP_dict,
+                                         X_SHAPE = X.shape, 
+                                         y_shape = y_true.shape,
+                                         OP_DEPTH = PRED_OP_DEPTH)
+        
+        """
+        if learn_function:
+            gene_learn = generate_random_gene(OP_dict = setup_OP_dict, 
+                                              X_SHAPE = X.shape,
+                                              y_shape = y_true.shape,
+                                              OP_DEPTH = LEARN_OP_DEPTH)
+        
+            genes_temp.append( gene_learn )
+        """
+
+        if setup_function:
+            resolve_genome(gene = gene_setup,
+                           OP_dict=setup_OP_dict,
+                          memory_ref_dict= memory_ref_dict,
+                          return_result = False)
+        
+        
+        preds = resolve_genome(X = X_arr,y = y_true,
+                               gene = gene_pred,
+                               memory_ref_dict = memory_ref_dict,
+                               OP_dict=pred_OP_dict  )
         fitness = fitness_func(preds, y_true)
-        genes_list.append( (fitness,(OP_gene, deepcopy(memory_arr), arg_locations, output_locations )  ) )
+
+        if learn_function:
+            ### TODO add training loop and override preds above
+            raise NotImplementedError
+        else:
+            gene_learn = None 
+
+        #TODO test whether we need the memory_arr or just the memory_ref_dict
+        #memory_reference = initialize_memory_limited(X.shape, y_true.shape)
+
+        ## too fixed? fuck it 
+        genes_list.append( 
+            {
+            "fitness":fitness, 
+            "gene_setup":gene_setup, #should genes be in a list under key gene?
+            "gene_pred":gene_pred,
+            "gene_learn":gene_learn
+            #"memory_reference": memory_reference #do we need to store memory or could it be transient 
+            } ) 
 
     return genes_list
 
 
-def initialize_memory(memory_size = MEMORY_SIZE, element_type = "scalar", matrix_size= MATRIX_SIZE, start=-100, end=100):
-    """
-        weight_type: int or float, specifies whether to 
-    """    
-
-    if element_type == "scalar":
-        scalar_memory = np.random.uniform(start,end, size=(memory_size,))
-        return scalar_memory
-    elif element_type == "vector":
-        vector_memory = np.random.normal(loc=0 , scale=1, size=(memory_size,matrix_size[0]) )
-        return vector_memory
-    elif element_type == "matrix":
-        matrix_memory = np.random.normal(loc=0 , scale=1, size=(memory_size,matrix_size[0],matrix_size[1]) )
-        return matrix_memory
-
-def _mutate_all(winner):
-    _, (OP_gene,memory_arr, arg_locations, output_locations) = winner
-
-    #scalar_memory_arr, vector_memory_arr, matrix_memory_arr = initialize_memory(memory_size = MEMORY_SIZE, element_type = "scalar", matrix_size= (2,2), start=-100, end=100)
-    OP_gene = np.random.randint(0,len(OP_dict_basic), size=(OP_DEPTH,1))
-    arg_locations = np.random.randint(0, len(memory_arr),size=(arg_locations.shape)).astype(int)
-    output_locations = np.random.randint(0, len(memory_arr) ,size=(output_locations.shape)).astype(int)
-
-    return (-9999, (OP_gene,memory_arr, arg_locations, output_locations))
-
-def _mutate_add_or_remove_one_instruction(winner):
-    _, (OP_gene, memory_arr, arg_locations, output_locations) = deepcopy(winner)
-
-    instruction_idx = np.random.randint(0,OP_DEPTH, size=(1) )[0]
-
-    OP_gene[instruction_idx] = np.random.randint(0,len(OP_dict_basic), size=OP_gene[instruction_idx].shape)
-    arg_locations[instruction_idx] = np.random.randint(0, len(memory_arr),size=arg_locations[instruction_idx].shape).astype(int)
-    output_locations[instruction_idx] = np.random.randint(0, len(memory_arr),size=output_locations[instruction_idx].shape).astype(int)
-
-    return (-9999, (OP_gene,memory_arr, arg_locations, output_locations))
-
-def _mutate_one_argument(winner):
-    _, (OP_gene, memory_arr,arg_locations, output_locations) = deepcopy(winner)
-
-    instruction_idx = np.random.randint(0,OP_DEPTH, size=(1))[0]
-
-    if np.random.random() > 0.5:
-        argument_idx = np.random.randint(0,arg_locations[instruction_idx].shape[0], size=(1))[0]
-        arg_locations[instruction_idx,argument_idx] = np.random.randint(0, len(memory_arr),size=(1)).astype(int)
-    else:
-        output_locations[instruction_idx] = np.random.randint(0, len(memory_arr),size=output_locations[instruction_idx].shape).astype(int)
-
-    return (-9999, (OP_gene,memory_arr, arg_locations, output_locations))    
-
-def mutate_winner(winner):
-
-    mutations = [_mutate_one_argument, _mutate_all,  _mutate_add_or_remove_one_instruction ]
-    mutation_function = choice(mutations)
-    return mutation_function(winner)
-
 def run_tournament(contestants):
     min_fitness = float("inf")
     for idx in range(len(contestants)):
-        if contestants[idx][0] < min_fitness:
-            min_fitness = contestants[idx][0]
+        if contestants[idx]["fitness"] < min_fitness:
+            min_fitness = contestants[idx]["fitness"]
             min_idx = idx
     tournament_winner = contestants[min_idx]
     return tournament_winner
 
 
+def get_best_fitness(population_list):
+    min_fitness = float("inf")
+    for meta_gene in population_list:
+        if min_fitness > meta_gene["fitness"]:
+            min_fitness = meta_gene["fitness"]
+    return min_fitness
+
 ## TODO this can be vectorized
-def run_evolution(X_arr, true_y, iters = 100000,fitness_func = None, reward_to_gene_list = None, N=10, population = POPULATION_COUNT):
+def run_evolution(X, y, iters = 100000,
+                fitness_func = None, \
+                population_list = None, 
+                N=10):
+    """
+    There are 2 modes of referencing 
+    """
     
     for i in tqdm(range(iters)):   
         
-        min_fitness = float("inf")
+        
         if i%1000 == 0:
-            for fitness, (_,_,_,_) in reward_to_gene_list:
-                if min_fitness > fitness:
-                    min_fitness = fitness
-            print("BEST FITNESS TO DATE: {}".format(min_fitness))
+            print("BEST FITNESS TO DATE: {}".format(get_best_fitness(population_list)))
 
-        #TODO use arrays not lists they are faster
-        contestants = sample(reward_to_gene_list, N)
+        current_memory, memory_ref_dict = initialize_memory_limited(X_shape = X.shape,y_shape = y.shape, scalars=5, vectors=5, matricies=5)
+
+        contestants = sample(population_list, N)
+        tournament_winner = run_tournament(contestants)        
+        new_metagene = mutate_winner(tournament_winner, len(memory_ref_dict))
         
-        tournament_winner = run_tournament(contestants)
-        import pdb;pdb.set_trace()
-        fitness, (OP_gene,memory_arr, args_gene, out_gene) = tournament_winner
-        new_child = mutate_winner(tournament_winner)
-        preds = resolve_genome(X_arr,new_child[1][0], new_child[1][1], new_child[1][2], new_child[1][3], OP_dict_basic  )
-        fitness = fitness_func(preds, true_y)
-        if np.isnan(fitness):
-            fitness = MIN_FITNESS
-
-        reward_to_gene_list.append(( fitness, (new_child[1][0], new_child[1][1], new_child[1][2], new_child[1][3])) )
-        reward_to_gene_list.pop(0)        
+        #setup function
+        resolve_genome(X=X_arr,y=y_true,
+                              gene = new_metagene["gene_setup"], \
+                              OP_dict = setup_OP_dict, \
+                              memory_ref_dict = memory_ref_dict, \
+                             return_result = False)
         
-    return reward_to_gene_list
-
-## Here is where each OP needs to be applied based on the OP dimension in 
-## (OP#:(OP, MAX_ARGS, INPUT_TYPE (0:Scalar,1:Vector,2:Matrix,3:SC/Vector,4:SC/Matrix),
-#      OUTPUT_TYPE (0:Scalar,1:Vector,2:Matrix)))
-## If special accomodations are needed now what?
-## Will attempt to force ndim == 3 for all
-def resolve_genome(X_vals,genome_OPs = None, memory_arr = None, \
-                   args_locations= None, output_locations = None , \
-                   OP_dict = OP_dict_basic):
-    final_results_arr = np.empty_like(X_vals).astype(float)
-    #temp_memory = deepcopy(memory_arr)
-
-    assert X_vals.ndim == 3 ## batch, x,y. Can easily be expanded to n dims 
-    for X_idx in range(X_vals.shape[0]):
-        memory_arr[INPUT_ADDR][0:X_vals.shape[1],0:X_vals.shape[2]] = X_vals[X_idx]
-       
-        for gene_idx in range(0,len(genome_OPs)):
-
-            ## Instead of being listed in the genome, they can be different OPs for different cases            
-            ## FIXME remove input + output type? 
-            OP_to_apply, max_args, _, _ = OP_dict[genome_OPs[gene_idx][0]]
-
-            ## We get max_args locations in memory + output location in memory
-            args = memory_arr [ args_locations[gene_idx,:max_args]]
-            results = OP_to_apply(*args)
-            memory_arr[output_locations[gene_idx][0]] [0:results.shape[0],0:results.shape[1]] = results
-            if np.isnan(memory_arr[output_locations[gene_idx]]).any():
-                memory_arr[output_locations[gene_idx]] = MIN_VAL
-        #try:
-        final_results_arr[X_idx] = memory_arr[OUTPUT_ADDR].reshape(final_results_arr[X_idx].shape)
+        #predict function
+        preds = resolve_genome(X=X_arr,y=y_true,
+                              gene = new_metagene["gene_pred"], \
+                              OP_dict = pred_OP_dict,
+                              memory_ref_dict= memory_ref_dict  )# we can supply different OP_dicts to shift meta-levels
+        new_metagene["fitness"] = fitness_func(preds, y_true)
         
-    return final_results_arr
+        ## Append to population list
+        population_list.append( new_metagene )
+        population_list.pop(0)
+        
+    return population_list
 
-def mse_fitness(preds, HALVED):
-    return np.sum(np.abs(preds - HALVED))
+
+def resolve_genome(
+    X = None,
+    y = None,
+    gene = None,
+    memory_ref_dict = None,
+    OP_dict = None,
+    return_result = True):
+    
+    if return_result:
+        final_results_arr = np.empty_like(y).astype(float)
+    else:
+        X = [None] # run once
+
+    genome_OPs, args_locations, output_locations, constants = gene
+
+    
+    #for X_idx in range(len(X)):
+    #FIXME use mem ref dict
+    if return_result:
+        memory_ref_dict[0][:] = np.resize(X, memory_ref_dict[0].shape )
+    
+    for gene_idx in range(0,len(genome_OPs)):
+        OP_to_apply, max_args = OP_dict[genome_OPs[gene_idx][0]]
+
+        if max_args == 0:
+            op_args = constants[gene_idx]
+        else:
+            op_args = (memory_ref_dict.get(idx) for idx in args_locations[gene_idx,:max_args])#tuples are quicker?
+        
+        ## Commit output to memory
+        try:
+            result = OP_to_apply(*op_args)
+        except:
+            #failed_op_count += 1
+            result = 0#float("nan")
+        output_idx = output_locations[gene_idx][0]        
+        output_arr = memory_ref_dict[output_idx]
+        memory_ref_dict[output_idx][:] = np.resize(result, output_arr.shape)
+    
+    if return_result:
+        return memory_ref_dict[1]
