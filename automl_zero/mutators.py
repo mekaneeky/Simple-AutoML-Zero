@@ -1,7 +1,7 @@
 import numpy as np 
 
 from random import choice 
-from copy import deepcopy
+from copy import deepcopy,copy
 from automl_zero.ops import OP_dict_sizes
 from automl_zero.memory import initialize_memory_limited
 
@@ -60,7 +60,7 @@ def mutate_winner(winner_metagene, memory_dict_len):
     ## However, more importantly can we do this 
     ## and only allow a mutation that leads to better overall ancestral performance? 
 
-    if winner_metagene["gene_setup"] != None and winner_metagene["gene_learn"]:
+    if winner_metagene["gene_setup"] != None and winner_metagene["gene_learn"] != None:
         gene_to_mutate = choice(["gene_setup", "gene_pred", "gene_learn"])
     elif winner_metagene["gene_setup"] != None:
         gene_to_mutate = choice(["gene_setup", "gene_pred"])
@@ -69,8 +69,9 @@ def mutate_winner(winner_metagene, memory_dict_len):
 
     mutations = [_mutate_one_argument, _mutate_all,  _mutate_add_or_remove_one_instruction ]
     mutation_function = choice(mutations)
-    new_metagene = deepcopy(winner_metagene) # Should we have a state of all functions 
-                                             # in a dictionary where 42:function_for_all()
+    new_metagene = deepcopy(winner_metagene) #switching to copy boosted by 300-400 iters 
+    # Should we have a state of all functions 
+    # in a dictionary where 42:function_for_all()
     new_metagene[gene_to_mutate] = mutation_function(new_metagene[gene_to_mutate], gene_to_mutate, memory_dict_len)
     new_metagene["fitness"] = None
     return new_metagene

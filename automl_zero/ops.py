@@ -69,7 +69,7 @@ def gaussian_matrix(mean, std):#op_64 matrix
     return np.random.normal(mean,std, size=(X_SHAPE[0],X_SHAPE[1]))
 
 
-pred_OP_dict = {0:(np.add,2), #basic
+pred_OP_dict = {10:(np.add,2), #basic
            1:(np.subtract,2),
            2:(np.multiply,2),
            3:(np.divide,2),
@@ -79,21 +79,37 @@ pred_OP_dict = {0:(np.add,2), #basic
            7:(np.cos,1), 
            8:(np.tan,1),
            9:(np.log,1),
-           10:(do_nothing,1)}
+           0:(do_nothing,1)}
 
 setup_OP_dict = {
-        0:(set_constant_scalar, 0),
+        7:(set_constant_scalar, 0),
         1:(uniform_scalar, 0),
         2:(uniform_vector, 0),
         3:(uniform_matrix, 0),
         4:(gaussian_scalar, 0),
         5:(gaussian_vector, 0),
-        6:(gaussian_matrix, 0)
-    }
+        6:(gaussian_matrix, 0),
+        0:(do_nothing,1)
+        }
+
+learn_OP_dict = {10:(np.add,2), #basic
+           1:(np.subtract,2),
+           2:(np.multiply,2),
+           3:(np.divide,2),
+           4:(np.abs,1), 
+           5:(np.reciprocal,1),
+           6:(np.sin,1), 
+           7:(np.cos,1), 
+           8:(np.tan,1),
+           9:(np.log,1),
+           0:(do_nothing,1)}
+
 
 OP_dict_sizes = { 
     "gene_setup":len(setup_OP_dict),
-    "gene_pred":len(pred_OP_dict) 
+    "gene_pred":len(pred_OP_dict),
+    "gene_learn":len(learn_OP_dict) 
+
 }
 
 """    
