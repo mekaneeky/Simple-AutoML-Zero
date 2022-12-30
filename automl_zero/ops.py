@@ -1,19 +1,154 @@
-import pyglove as pg
 import numpy as np
 from .config import *
-#from numba import jit, njit
+from numba import njit,cfunc, typed
+from numba.typed import List, Dict
+## OP 0: Do Nothing
+#FIXME do nothing is identity
+@njit(cache=True)
+def do_nothing(*args):
+    return 0
 
-def sigmoid(x):
+#OP 1: Add Scalars
+@njit(cache=True)
+def add_scalar(*args):
+    return np.add(args[0],args[1])
+
+#OP 2: Subtract Scalars
+@njit(cache=True)
+def sub_scalar(*args):
+    return np.diff(args[0],args[1])
+
+#OP 3: Subtract Scalars
+@njit(cache=True)
+def multiply_scalar(*args):
+    return np.multiply(args[0],args[1])
+
+#OP 4: Subtract Scalars
+@njit(cache=True)
+def divide_scalar(*args):
+    return np.divide(args[0],args[1])
+
+#OP 5: |ABS| Scalars
+@njit(cache=True)
+def abs_scalar(*args):
+    return np.abs(args[0])
+
+#OP 6: 1/X Scalars
+@njit(cache=True)
+def reciprocal_scalar(*args):
+    return np.reciprocal(args[0])
+
+#OP 7: sin Scalars
+@njit(cache=True)
+def sin_scalar(*args):
+    return np.sin(args[0])
+
+#OP 8: كس Scalars
+@njit(cache=True)
+def cos_scalar(*args):
+    return np.cos(args[0])
+
+#OP 9: tan Scalars
+@njit(cache=True)
+def tan_scalar(*args):
+    return np.tan(args[0])
+
+#OP 10: arcsin Scalars
+@njit(cache=True)
+def arcsin_scalar(*args):
+    return np.sin(args[0])
+
+#OP 11: arcكس Scalars
+@njit(cache=True)
+def arccos_scalar(*args):
+    return np.cos(args[0])
+
+#OP 12: arctan Scalars
+@njit(cache=True)
+def arctan_scalar(*args):
+    return np.tan(args[0])
+
+#@njit(cache=True)
+#def resolve_OP(op_number = 0.0):
+    if op_number == 0:
+        return do_nothing
+    elif op_number == 1:
+        return add_scalar
+    elif op_number == 2:
+        return sub_scalar
+    elif op_number == 3:
+        return multiply_scalar
+    elif op_number == 4:
+        return divide_scalar
+    elif op_number == 5:
+        return abs_scalar
+    elif op_number == 6:
+        return reciprocal_scalar
+    elif op_number == 7:
+        return sin_scalar
+    elif op_number == 8:
+        return cos_scalar
+    elif op_number == 9:
+        return tan_scalar
+    elif op_number == 10:
+        return arcsin_scalar
+    elif op_number == 11:
+        return arccos_scalar
+    elif op_number == 12:
+        return arctan_scalar
+    """
+    elif op_number == 13:
+        
+    elif op_number == 14:
+
+    elif op_number == 15:
+
+    elif op_number == 16:
+
+    elif op_number == 17:
+    
+    elif op_number == 18:
+
+    elif op_number == 19:
+
+    elif op_number == 20:
+
+    elif op_number == 21:
+
+    elif op_number == 22:
+
+    elif op_number == 23:
+
+    elif op_number == 24:
+
+    elif op_number == 25:
+
+    elif op_number == 26:
+
+    elif op_number == 27:
+
+    elif op_number == 28:
+
+    elif op_number == 29:
+
+    elif op_number == 30:
+
+    elif op_number == 31:
+
+    elif op_number == 32:
+    """
+
+def sigmoid(*args):
      return 1 /(1 + 1 / np.exp(x))
 
 def leaky_relu(x, alpha):
     return np.where(x > 0, x, x * alpha)
 
-def relu(x):
+def relu(*args):
     x[x<0] =0
     return x
 
-def stable_softmax(x):
+def stable_softmax(*args):
     z = x - np.max(x)
     numerator = np.exp(z)
     denominator = np.sum(numerator)
@@ -21,14 +156,11 @@ def stable_softmax(x):
 
     return softmax
 
-#FIXME do nothing is identity
-def do_nothing(x):
-    pass
 
-def mean_axis(x):
+def mean_axis(*args):
     return np.mean(x,axis=0)
 
-def std_axis(x):
+def std_axis(*args):
     return np.std(x,axis=0)
                                                                                              #OP 56-64
 
@@ -68,6 +200,20 @@ def gaussian_vector(mean, std):#op_63 vector
 def gaussian_matrix(mean, std):#op_64 matrix
     return np.random.normal(mean,std, size=(X_SHAPE[0],X_SHAPE[1]))
 
+# How to reimplement args vs consts dilemma? can we pass 2 sets of args to f(x)
+# We can do it on a setup gene level, but this would impede the pred and learn genes no?
+numba_test_OP_dict = {
+       0:add_scalar,
+       1:divide_scalar,
+       2:sub_scalar,
+       3:multiply_scalar,
+       4:reciprocal_scalar,
+       5:abs_scalar 
+    }
+
+# TODO tests for scalar, vector and matrix OPS
+# TODO tests for cross OP type operations ? What to do then ?
+
 
 pred_OP_dict = {10:(np.add,2), #basic
            1:(np.subtract,2),
@@ -80,6 +226,8 @@ pred_OP_dict = {10:(np.add,2), #basic
            8:(np.tan,1),
            9:(np.log,1),
            0:(do_nothing,1)}
+pred_OPs = np.random.randint(0,12,size=(11))#List(pred_OP_dict.values())
+PRED_OP_NUMBER = 11
 
 setup_OP_dict = {
         7:(set_constant_scalar, 0),
@@ -91,6 +239,8 @@ setup_OP_dict = {
         6:(gaussian_matrix, 0),
         0:(do_nothing,1)
         }
+setup_OPs = np.random.randint(0,10,size=(11))
+SETUP_OP_NUMBER = 8
 
 learn_OP_dict = {10:(np.add,2), #basic
            1:(np.subtract,2),
@@ -103,14 +253,21 @@ learn_OP_dict = {10:(np.add,2), #basic
            8:(np.tan,1),
            9:(np.log,1),
            0:(do_nothing,1)}
+learn_OPs = np.random.randint(0,12,size=(11))
+LEARN_OP_NUMBER = 11
 
 
-OP_dict_sizes = { 
-    "gene_setup":len(setup_OP_dict),
-    "gene_pred":len(pred_OP_dict),
-    "gene_learn":len(learn_OP_dict) 
+OP_dict_sizes = Dict() 
+#OP_dict_sizes["gene_setup"] = len(setup_OP_dict)
+LOW_SETUP_OPS = 0
+UNIQUE_SETUP_OPS = len(setup_OP_dict)
+#OP_dict_sizes["gene_pred"] = len(pred_OP_dict)
+LOW_PRED_OPS = 0
+UNIQUE_PRED_OPS = len(pred_OP_dict)
+#OP_dict_sizes["gene_learn"] = len(learn_OP_dict) 
+LOW_LEARN_OPS = 0
+UNIQUE_LEARN_OPS = len(learn_OP_dict)
 
-}
 
 """    
 OP_dict_basic = {0:(np.add,2,0,0), 
