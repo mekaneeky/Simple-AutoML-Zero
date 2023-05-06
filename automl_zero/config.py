@@ -6,9 +6,9 @@ X_arr = np.array([[10,22, 5000, 300, 999],
                       [101,212, 52000, 3300, 4999],
                       [1,2, 500, 30, 99],
                       [120,222, 50200, 3200, 9929],
-    ]).reshape(-1,5,1)
+    ]).reshape(-1,5)
 X_SHAPE = X_arr.shape
-y_true = np.cos(X_arr // 2)**3 + 100
+y_true = X_arr // 2
 y_shape = y_true.shape
 MAXIMUM_ARGUMENT_LENGTH = 2
 INPUT_SIZE = 1
@@ -21,9 +21,6 @@ INPUT_SIZE = 1
 CONSTANTS_LOW = -100
 CONSTANTS_HIGH = 100
 
-POPULATION_COUNT = 1000
-TOURNAMENT_COUNT = 10
-ITERS = 5000000
 
 INPUT_ADDR = 0
 OUTPUT_ADDR = 1
@@ -41,3 +38,7 @@ OP_DEPTH = 5
 
 MIN_VAL = -1
 MIN_FITNESS = 999999
+
+setup_function = True
+learn_function = False
+random_initialization= True

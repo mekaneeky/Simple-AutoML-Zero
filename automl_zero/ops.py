@@ -4,71 +4,71 @@ from numba import njit,cfunc, typed
 from numba.typed import List, Dict
 ## OP 0: Do Nothing
 #FIXME do nothing is identity
-@njit(cache=True)
+#@njit(cache=True)
 def do_nothing(*args):
     return 0
 
 #OP 1: Add Scalars
-@njit(cache=True)
+#@njit(cache=True)
 def add_scalar(*args):
     return np.add(args[0],args[1])
 
 #OP 2: Subtract Scalars
-@njit(cache=True)
+#@njit(cache=True)
 def sub_scalar(*args):
     return np.diff(args[0],args[1])
 
 #OP 3: Subtract Scalars
-@njit(cache=True)
+#@njit(cache=True)
 def multiply_scalar(*args):
     return np.multiply(args[0],args[1])
 
 #OP 4: Subtract Scalars
-@njit(cache=True)
+#@njit(cache=True)
 def divide_scalar(*args):
     return np.divide(args[0],args[1])
 
 #OP 5: |ABS| Scalars
-@njit(cache=True)
+#@njit(cache=True)
 def abs_scalar(*args):
     return np.abs(args[0])
 
 #OP 6: 1/X Scalars
-@njit(cache=True)
+#@njit(cache=True)
 def reciprocal_scalar(*args):
     return np.reciprocal(args[0])
 
 #OP 7: sin Scalars
-@njit(cache=True)
+#@njit(cache=True)
 def sin_scalar(*args):
     return np.sin(args[0])
 
 #OP 8: كس Scalars
-@njit(cache=True)
+#@njit(cache=True)
 def cos_scalar(*args):
     return np.cos(args[0])
 
 #OP 9: tan Scalars
-@njit(cache=True)
+#@njit(cache=True)
 def tan_scalar(*args):
     return np.tan(args[0])
 
 #OP 10: arcsin Scalars
-@njit(cache=True)
+#@njit(cache=True)
 def arcsin_scalar(*args):
     return np.sin(args[0])
 
 #OP 11: arcكس Scalars
-@njit(cache=True)
+#@njit(cache=True)
 def arccos_scalar(*args):
     return np.cos(args[0])
 
 #OP 12: arctan Scalars
-@njit(cache=True)
+#@njit(cache=True)
 def arctan_scalar(*args):
     return np.tan(args[0])
 
-#@njit(cache=True)
+##@njit(cache=True)
 #def resolve_OP(op_number = 0.0):
     if op_number == 0:
         return do_nothing

@@ -13,7 +13,7 @@ from numba import njit
 from numba.typed import List, Dict
 
 
-@njit(cache=True)
+#@njit(cache=True)
 def generate_random_gene(NUMBER_OF_OPS = None, 
     MAX_ARG = 2, X_SHAPE = None,y_shape= None ,OP_DEPTH = None,
     CONSTANTS_LOW = -50, CONSTANTS_HIGH= 50,CONSTANTS_MAX =2,
@@ -42,7 +42,7 @@ def generate_random_gene(NUMBER_OF_OPS = None,
     return np.hstack((OP_gene, arg_locations, output_locations, constants))
 
 ##TODO Classcize this and allow for extentions through inheritance/mixins
-@njit(cache=True)
+#@njit(cache=True)
 def initialize_population(X = None, y = None, population_count = POPULATION_COUNT,\
                           memory_ref_dict = None, \
                           fitness_func=None, \
@@ -50,9 +50,10 @@ def initialize_population(X = None, y = None, population_count = POPULATION_COUN
                           setup_OP_dict = None, SETUP_OP_DEPTH = None , \
                           pred_OP_dict = None, PRED_OP_DEPTH = None, \
                           learn_OP_dict = None, LEARN_OP_DEPTH = None, \
-                          setup_function = False,
-                          learn_function = False,
-                          initialization= "zeros"):
+                          #setup_function = False,
+                          #learn_function = False,
+                          #initialization= "zeros"
+                          ):
     
     
     
@@ -68,7 +69,7 @@ def initialize_population(X = None, y = None, population_count = POPULATION_COUN
                                               X_SHAPE = X.shape,
                                               y_shape = y_true.shape,
                                               OP_DEPTH = max_OP_depth,
-                                              initialization = initialization)
+                                              initialization = "random" if random_initialization else "zeros")
         else:
             gene_setup = None
 
@@ -76,7 +77,7 @@ def initialize_population(X = None, y = None, population_count = POPULATION_COUN
                                          X_SHAPE = X.shape, 
                                          y_shape = y_true.shape,
                                          OP_DEPTH = max_OP_depth,
-                                         initialization = initialization)
+                                         initialization = "random" if random_initialization else "zeros")
         
 
         if learn_function:
@@ -84,7 +85,7 @@ def initialize_population(X = None, y = None, population_count = POPULATION_COUN
                                                 X_SHAPE = X.shape,
                                                 y_shape = y_true.shape,
                                                 OP_DEPTH = max_OP_depth,
-                                                initialization = initialization)
+                                                initialization = "random" if random_initialization else "zeros")
             
         else:
             gene_learn = None
@@ -150,7 +151,7 @@ def initialize_population(X = None, y = None, population_count = POPULATION_COUN
 
     return genes_list, fitness_list
 
-@njit(cache=True)
+#@njit(cache=True)
 def run_tournament(fitness_list, contestant_indicies):
     min_fitness = 9999999999
     for contestant_idx in contestant_indicies:
@@ -162,7 +163,7 @@ def run_tournament(fitness_list, contestant_indicies):
     
     return winner_idx
 
-@njit(cache=True)
+#@njit(cache=True)
 def get_best_fitness(fitness_list):
     min_fitness = 9999999999
     for gene_idx in range(len(fitness_list)):
@@ -172,7 +173,7 @@ def get_best_fitness(fitness_list):
     return min_idx
 
 ## TODO this can be vectorized
-@njit(cache=True)
+#@njit(cache=True)
 def run_evolution(X, y, iters = 100000,
                 fitness_func = None, \
                 population_list = None, 
@@ -265,7 +266,7 @@ def run_evolution(X, y, iters = 100000,
 
 #FIXME set OP_dict for max_OP_depth and then control exit condition from loop
 # to allow for numba to have fixed type arguments
-@njit(cache=True)
+#@njit(cache=True)
 def resolve_genome(
     gene = None,
     resolve_depth = PRED_OP_NUMBER,
@@ -277,7 +278,7 @@ def resolve_genome(
 
     for gene_idx in range(0,resolve_depth):
         #print("Evaluating")
-        op_number    = genome_OPs[gene_idx]
+        op_number = genome_OPs[gene_idx]
         #print(op_number)
 
         if constants_flag:

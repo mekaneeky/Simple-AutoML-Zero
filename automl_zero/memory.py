@@ -2,6 +2,7 @@ import numpy as np
 from numba import njit, jit, typed
 from automl_zero.config import X_arr, y_true
 
+#@njit(cache=True)
 def initialize_memory_free(memory_shape = (30,10,10), mem_type = "normal", mean=0, loc=1, start=-2, end=2):
     """
     
@@ -18,7 +19,7 @@ def initialize_memory_free(memory_shape = (30,10,10), mem_type = "normal", mean=
         init_memory = np.zeros(shape=memory_shape)
         return init_memory
 
-@njit(cache=True)
+#@njit(cache=True)
 def initialize_memory_limited(X_shape = X_arr[0].shape,y_shape = y_true[0].shape ,scalars=5, vectors=5, matricies=5):
     #print("initialize memory")
     """

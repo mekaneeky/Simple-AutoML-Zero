@@ -8,7 +8,7 @@ from automl_zero.ops import LOW_SETUP_OPS,UNIQUE_SETUP_OPS,LOW_PRED_OPS,UNIQUE_P
 #from automl_zero.memory import initialize_memory_limited
 
 ## TODO use globals ?
-@njit(cache=True)
+#@njit(cache=True)
 def _mutate_all(winner,gene_to_mutate, memory_dict_len):
 
     #CONSTANTS_LOW = -100,CONSTANTS_HIGH = 100
@@ -25,7 +25,7 @@ def _mutate_all(winner,gene_to_mutate, memory_dict_len):
 
     return np.hstack((OP_gene, arg_locations, output_locations,constants))
 
-@njit(cache=True)
+#@njit(cache=True)
 def _mutate_add_or_remove_one_instruction(winner, gene_to_mutate,  memory_dict_len):
 
     #CONSTANTS_LOW = -100,CONSTANTS_HIGH = 100
@@ -46,7 +46,7 @@ def _mutate_add_or_remove_one_instruction(winner, gene_to_mutate,  memory_dict_l
     
     return np.hstack((OP_gene, arg_locations, output_locations, constants))
 
-@njit(cache=True)
+#@njit(cache=True)
 def _mutate_one_argument(winner, gene_to_mutate, memory_dict_len):
 
     OP_gene, arg_locations, output_locations, constants = winner[:,0:1], winner[:,1:3], winner[:,3:4], winner[:,4:6]
@@ -62,7 +62,7 @@ def _mutate_one_argument(winner, gene_to_mutate, memory_dict_len):
     #(fitness,(OP_gene, memory_arr, arg_locations, output_locations )
     return np.hstack((OP_gene, arg_locations, output_locations, constants))
 
-@njit(cache=True)
+#@njit(cache=True)
 def mutate_winner(winner_metagene, memory_dict_len):
     ## namespace
     ## Metalearners that learn across meta-levels 
