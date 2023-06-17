@@ -24,16 +24,6 @@ def _mutate_all(winner,gene_to_mutate, memory_dict_len, MAX_ARG=2):
     genome_OPs = np.random.randint(0,NUMBER_OF_META_OPS, size=(genome_OPs.shape[0],genome_OPs.shape[1])).astype(np.int8)
 
 
-    for instruction_idx in range(0,metalevel_gene.shape[0]):
-        if metalevel_gene[instruction_idx] == 0:
-            if gene_to_mutate == "gene_setup":
-                genome_OPs = np.random.randint(LOW_SETUP_OPS,UNIQUE_SETUP_OPS, size=(genome_OPs.shape[0],genome_OPs.shape[1])).astype(np.int8)
-                
-            elif gene_to_mutate == "gene_pred":
-                genome_OPs = np.random.randint(LOW_PRED_OPS,UNIQUE_PRED_OPS, size=(genome_OPs.shape[0],genome_OPs.shape[1])).astype(np.int8)
-
-            else:
-                genome_OPs = np.random.randint(LOW_LEARN_OPS,UNIQUE_LEARN_OPS, size=(genome_OPs.shape[0],genome_OPs.shape[1])).astype(np.int8)
 
 
     args_locations = np.random.randint(0, memory_dict_len,size=(args_locations.shape)).astype(np.float64)
@@ -51,27 +41,8 @@ def _mutate_add_or_remove_one_instruction(winner, gene_to_mutate,  memory_dict_l
     instruction_idx = np.random.randint(0,genome_OPs.shape[0], size=(1) )[0]
 
 
-    if gene_to_mutate == "gene_setup":
-        metalevel_gene[instruction_idx:instruction_idx+1] = np.random.randint(0,METALEVEL_COUNT, size=(1)).astype(np.int8)
-        if metalevel_gene[instruction_idx] == 0:
-            genome_OPs[instruction_idx:instruction_idx+1] = np.random.randint(0,UNIQUE_SETUP_OPS, size=(1)).astype(np.int8)
-        else:
-            genome_OPs[instruction_idx:instruction_idx+1] = np.random.randint(0,NUMBER_OF_META_OPS, size=(1)).astype(np.int8)
-        
-
-    elif gene_to_mutate == "gene_pred":
-        metalevel_gene[instruction_idx:instruction_idx+1] = np.random.randint(0,METALEVEL_COUNT, size=(1)).astype(np.int8)
-        if metalevel_gene[instruction_idx] == 0:
-            genome_OPs[instruction_idx:instruction_idx+1] = np.random.randint(0,UNIQUE_PRED_OPS, size=(1)).astype(np.int8)
-        else:
-            genome_OPs[instruction_idx:instruction_idx+1] = np.random.randint(0,NUMBER_OF_META_OPS, size=(1)).astype(np.int8)
-    
-    else:
-        metalevel_gene[instruction_idx:instruction_idx+1] = np.random.randint(0,METALEVEL_COUNT, size=(1)).astype(np.int8)
-        if metalevel_gene[instruction_idx] == 0:
-            genome_OPs[instruction_idx:instruction_idx+1] = np.random.randint(0,UNIQUE_LEARN_OPS, size=(1)).astype(np.int8)
-        else:
-            genome_OPs[instruction_idx:instruction_idx+1] = np.random.randint(0,NUMBER_OF_META_OPS, size=(1)).astype(np.int8)
+    metalevel_gene[instruction_idx:instruction_idx+1] = np.random.randint(0,METALEVEL_COUNT, size=(1)).astype(np.int8)
+    genome_OPs[instruction_idx:instruction_idx+1] = np.random.randint(0,NUMBER_OF_META_OPS, size=(1)).astype(np.int8)
                 
 
     args_locations[instruction_idx] = np.random.randint(0, memory_dict_len,size=args_locations[instruction_idx].shape).astype(np.int8)
@@ -157,10 +128,8 @@ def mutate_combination_single(combine_OPs, NUMBER_OF_BASE_OPS = None):
     new_op_idx = np.randint(0, PRIOR_LEVEL_OPS, size=(1))[0]
     new_op_value = np.randint(0, NUMBER_OF_OPS, size=(1))[0]
 
-    if metalevel_idx==0:
-        new_op_value = np.randint(0, NUMBER_OF_BASE_OPS, size=(1))[0]
-    else:
-        new_op_value = np.randint(0, NUMBER_OF_OPS, size=(1))[0]
+
+    new_op_value = np.randint(0, NUMBER_OF_OPS, size=(1))[0]
 
     combine_OPs[metalevel_idx,op_idx, new_op_idx] = new_op_value
     
@@ -173,10 +142,7 @@ def mutate_combination_all_ops(combine_OPs, NUMBER_OF_BASE_OPS = None):
     METALEVEL_COUNT, NUMBER_OF_OPS,PRIOR_LEVEL_OPS = combine_OPs.shape
     metalevel_idx = np.randint(0, METALEVEL_COUNT, size=(1))[0]
     op_idx = np.randint(0, NUMBER_OF_OPS, size=(1))[0]
-    if metalevel_idx==0:
-        new_ops = np.randint(0, NUMBER_OF_BASE_OPS, size=(PRIOR_LEVEL_OPS))[0]
-    else:
-        new_ops = np.randint(0, NUMBER_OF_OPS, size=(PRIOR_LEVEL_OPS))[0]
+    new_ops = np.randint(0, NUMBER_OF_OPS, size=(PRIOR_LEVEL_OPS))[0]
 
     combine_OPs[metalevel_idx,op_idx, :] = new_ops
     
@@ -192,7 +158,7 @@ def mutate_combination_all(combine_OPs, NUMBER_OF_BASE_OPS = None):
     
     combine_OPs = np.random.randint(0, NUMBER_OF_META_OPS , size=(METALEVEL_COUNT, NUMBER_OF_META_OPS,PRIOR_LEVEL_OPS )).astype(np.float64)
     #Adding the base ops as a separate layer
-    combine_OPs[0,:,:] = np.random.randint(0, NUMBER_OF_BASE_OPS , size=(1, NUMBER_OF_META_OPS,PRIOR_LEVEL_OPS )).astype(np.float64)
+    #combine_OPs[0,:,:] = np.random.randint(0, NUMBER_OF_BASE_OPS , size=(1, NUMBER_OF_META_OPS,PRIOR_LEVEL_OPS )).astype(np.float64)
 
     return combine_OPs
 

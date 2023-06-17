@@ -43,17 +43,17 @@ def generate_random_hierarchical_gene(NUMBER_OF_BASE_OPS = SETUP_OP_NUMBER,
 
     if initialization == "random":
 
-        base_OP_idx = np.random.randint(0, NUMBER_OF_META_OPS-1 , size=(OP_DEPTH,1)).astype(np.int8) #(OP_DEPTH, OP_IDX, METALEVEL)
-        OP_metalevel = np.random.randint(0, METALEVEL_COUNT-1 , size=(OP_DEPTH,1)).astype(np.int8) #(OP_DEPTH, OP_IDX, METALEVEL)
+        base_OP_idx = np.random.randint(0, NUMBER_OF_META_OPS , size=(OP_DEPTH,1)).astype(np.int8) #(OP_DEPTH, OP_IDX, METALEVEL)
+        OP_metalevel = np.random.randint(0, METALEVEL_COUNT , size=(OP_DEPTH,1)).astype(np.int8) #(OP_DEPTH, OP_IDX, METALEVEL)
         for op_idx in range(OP_DEPTH):
             if OP_metalevel[op_idx] == 0:
-                base_OP_idx[op_idx] = np.random.randint(0, NUMBER_OF_BASE_OPS-1 , size=(1)).astype(np.int8) #probably introduces leakage. Should just ignore and let evolution
+                base_OP_idx[op_idx] = np.random.randint(0, NUMBER_OF_BASE_OPS, size=(1)).astype(np.int8) #probably introduces leakage. Should just ignore and let evolution
                 #weed them out
         #TODO make combine OPs not fixed to number of ops 
 
         temp_mem = initialize_memory_limited(X_SHAPE, y_shape, scalars=scalars,vectors=vectors,matricies=matricies) # to have correct arg_list_sizes
-        arg_locations = np.random.randint(0, len(temp_mem)-1,size=(OP_DEPTH, MAX_ARG)).astype(np.float64)
-        output_locations = np.random.randint(0, len(temp_mem)-1 ,size=(OP_DEPTH,1)).astype(np.float64)
+        arg_locations = np.random.randint(0, len(temp_mem),size=(OP_DEPTH, MAX_ARG)).astype(np.float64)
+        output_locations = np.random.randint(0, len(temp_mem) ,size=(OP_DEPTH,1)).astype(np.float64)
         constants = np.random.uniform(CONSTANTS_LOW,CONSTANTS_HIGH, size=(OP_DEPTH,CONSTANTS_MAX))#gaussian or uniform ??
         #FIXME non int constants
 
@@ -193,7 +193,7 @@ def initialize_gene_population(X = None, y = None, \
         if setup_function:
             # Only one memory for both? 
             gene_setup = generate_random_hierarchical_gene(NUMBER_OF_BASE_OPS = SETUP_OP_NUMBER, 
-                                                           NUMBER_OF_META_OPS= SETUP_OP_NUMBER,
+                                                           #NUMBER_OF_META_OPS= SETUP_OP_NUMBER,
                                               X_SHAPE = X[0].shape,
                                               y_shape = y[0].shape,
                                               OP_DEPTH = max_OP_depth,
@@ -204,7 +204,7 @@ def initialize_gene_population(X = None, y = None, \
             gene_setup = None
 
         gene_pred = generate_random_hierarchical_gene(NUMBER_OF_BASE_OPS = PRED_OP_NUMBER,
-                                                      NUMBER_OF_META_OPS= PRED_OP_NUMBER,
+                                                      #NUMBER_OF_META_OPS= PRED_OP_NUMBER,
                                         X_SHAPE = X[0].shape, 
                                         y_shape = y[0].shape,
                                         OP_DEPTH = max_OP_depth,
@@ -216,7 +216,7 @@ def initialize_gene_population(X = None, y = None, \
 
         if learn_function:
             gene_learn = generate_random_hierarchical_gene(NUMBER_OF_BASE_OPS = LEARN_OP_NUMBER, 
-                                                           NUMBER_OF_META_OPS= LEARN_OP_NUMBER,
+                                                           #NUMBER_OF_META_OPS= LEARN_OP_NUMBER,
                                                 X_SHAPE = X[0].shape,
                                                 y_shape = y[0].shape,
                                                 OP_DEPTH = max_OP_depth,
@@ -228,7 +228,7 @@ def initialize_gene_population(X = None, y = None, \
         else:
             gene_learn = None
 
-        import pdb;pdb.set_trace()
+        #import pdb;pdb.set_trace()
         fitness = 0.0
         accuracy = 0.0
         for x_idx in range(len(X)):            
@@ -351,18 +351,21 @@ def hierarchical_resolve_genome(
         if metalevel == 0:
             first_level_OPs = [OP_value]
         else:
-            try:
-                first_level_OPs = cached_metalevels[metalevel, OP_value]
-            except: 
-                import pdb;pdb.set_trace()
+            #try:
+            #FIXME this gets first level ops and metalevels too not accounting for the fact that higher levels are narrower? no see above
+            #print(f"{metalevel} {OP_value}")
+        
+            first_level_OPs = cached_metalevels[int(metalevel), int(OP_value)]
+            #except: 
+            #    import pdb;pdb.set_trace()
 
         #TODO add the input and output injection bit? Add OP for memory assign?
-        try:
-            op_args_0 = memory_ref_dict[int(args_locations[gene_idx][0])]
-            op_args_1 = memory_ref_dict[int(args_locations[gene_idx][1])]
-            first_OP_flag = True
-        except:
-            import pdb;pdb.set_trace()
+        #try:
+        op_args_0 = memory_ref_dict[int(args_locations[gene_idx][0])]
+        op_args_1 = memory_ref_dict[int(args_locations[gene_idx][1])]
+        first_OP_flag = True
+        #except:
+        #    import pdb;pdb.set_trace()
 
         for OP_idx in first_level_OPs:
             

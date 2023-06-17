@@ -29,7 +29,7 @@ if __name__ == "__main__":
     print("Generating population")
 
     combine_OPs, cached_metalevels = create_OP_gene(METALEVEL_COUNT, NUMBER_OF_META_OPS, PRIOR_LEVEL_OPS)
-
+    print(cached_metalevels.shape)
 
     population_list, fitness_list = initialize_gene_population(
         X = X_arr, y = y_true, \
@@ -47,6 +47,7 @@ if __name__ == "__main__":
         cached_metalevels = cached_metalevels,
        )
 
+    #import pdb;pdb.set_trace()
     start_time = time()
     pop_list, fit_list, iters = hierarchical_run_gene_evolution(X = X_arr,y = y_true, iters = 1000000,
                             fitness_func = mae, \

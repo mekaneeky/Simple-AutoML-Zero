@@ -84,7 +84,7 @@ def create_OP_population(METALEVEL_COUNT, NUMBER_OF_OPS, PRIOR_LEVEL_OPS,
 
 #@njit(cache=True)
 def create_OP_gene(METALEVEL_COUNT, NUMBER_OF_META_OPS, PRIOR_LEVEL_OPS):
-    combine_OPs = np.random.randint(0, NUMBER_OF_META_OPS-1 , size=(METALEVEL_COUNT, NUMBER_OF_META_OPS,PRIOR_LEVEL_OPS )).astype(np.float64)   
+    combine_OPs = np.random.randint(0, NUMBER_OF_META_OPS , size=(METALEVEL_COUNT, NUMBER_OF_META_OPS,PRIOR_LEVEL_OPS )).astype(np.float64)   
     cached_metalevels = _generate_cached_metalevels(combine_OPs)
     #0 to 1 issue with metalevel and base ops where meta_level number passed to cached_metalevels should be 1 less than the actual metalevel in the gene 
     # as teh 

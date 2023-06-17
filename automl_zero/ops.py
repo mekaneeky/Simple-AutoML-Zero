@@ -8,6 +8,9 @@ from numba.typed import List, Dict
 def do_nothing(*args):
     return 0
 
+def identity(*args):
+    return args[0]
+
 #OP 1: Add Scalars
 #@njit(cache=True)
 def add_scalar(*args):
@@ -254,7 +257,7 @@ learn_OP_dict = {10:(np.add,2), #basic
            9:(np.log,1),
            0:(do_nothing,1)}
 learn_OPs = np.random.randint(0,12,size=(11))
-LEARN_OP_NUMBER = 11
+# LEARN_OP_NUMBER = 11
 
 
 OP_dict_sizes = Dict() 
