@@ -120,16 +120,16 @@ def mutate_winner(winner_metagene, memory_dict_len):
 
 # Complete this function
 #@njit(cache=True)
-def mutate_combination_single(combine_OPs, NUMBER_OF_BASE_OPS = None):
+def mutate_combination_single(combine_OPs):
     #combine_OPs = np.random.randint(0, NUMBER_OF_OPS , size=(METALEVEL_COUNT, NUMBER_OF_OPS,PRIOR_LEVEL_OPS )).astype(np.float64)   
     METALEVEL_COUNT, NUMBER_OF_OPS,PRIOR_LEVEL_OPS = combine_OPs.shape
-    metalevel_idx = np.randint(0, METALEVEL_COUNT, size=(1))[0]
-    op_idx = np.randint(0, NUMBER_OF_OPS, size=(1))[0]
-    new_op_idx = np.randint(0, PRIOR_LEVEL_OPS, size=(1))[0]
-    new_op_value = np.randint(0, NUMBER_OF_OPS, size=(1))[0]
+    metalevel_idx = np.random.randint(0, METALEVEL_COUNT, size=(1))[0]
+    op_idx = np.random.randint(0, NUMBER_OF_OPS, size=(1))[0]
+    new_op_idx = np.random.randint(0, PRIOR_LEVEL_OPS, size=(1))[0]
+    new_op_value = np.random.randint(0, NUMBER_OF_OPS, size=(1))[0]
 
 
-    new_op_value = np.randint(0, NUMBER_OF_OPS, size=(1))[0]
+    new_op_value = np.random.randint(0, NUMBER_OF_OPS, size=(1))[0]
 
     combine_OPs[metalevel_idx,op_idx, new_op_idx] = new_op_value
     
@@ -137,19 +137,19 @@ def mutate_combination_single(combine_OPs, NUMBER_OF_BASE_OPS = None):
     return combine_OPs
 
 #@njit(cache=True)
-def mutate_combination_all_ops(combine_OPs, NUMBER_OF_BASE_OPS = None):
+def mutate_combination_all_ops(combine_OPs):
     #combine_OPs = np.random.randint(0, NUMBER_OF_OPS , size=(METALEVEL_COUNT, NUMBER_OF_OPS,PRIOR_LEVEL_OPS )).astype(np.float64)   
     METALEVEL_COUNT, NUMBER_OF_OPS,PRIOR_LEVEL_OPS = combine_OPs.shape
-    metalevel_idx = np.randint(0, METALEVEL_COUNT, size=(1))[0]
-    op_idx = np.randint(0, NUMBER_OF_OPS, size=(1))[0]
-    new_ops = np.randint(0, NUMBER_OF_OPS, size=(PRIOR_LEVEL_OPS))[0]
+    metalevel_idx = np.random.randint(0, METALEVEL_COUNT, size=(1))[0]
+    op_idx = np.random.randint(0, NUMBER_OF_OPS, size=(1))[0]
+    new_ops = np.random.randint(0, NUMBER_OF_OPS, size=(PRIOR_LEVEL_OPS))[0]
 
     combine_OPs[metalevel_idx,op_idx, :] = new_ops
     
     return combine_OPs
 
 #@njit(cache=True)
-def mutate_combination_all(combine_OPs, NUMBER_OF_BASE_OPS = None):
+def mutate_combination_all(combine_OPs):
     #combine_OPs = np.random.randint(0, NUMBER_OF_OPS , size=(METALEVEL_COUNT, NUMBER_OF_OPS,PRIOR_LEVEL_OPS )).astype(np.float64)   
     #_COUNT_OF_GENES ,METALEVEL_COUNT, NUMBER_OF_OPS,PRIOR_LEVEL_OPS
 
@@ -163,12 +163,11 @@ def mutate_combination_all(combine_OPs, NUMBER_OF_BASE_OPS = None):
     return combine_OPs
 
 #@njit(cache=True)
-def mutate_combination_winner(winner_combine_OPs, winner_cached_gene, NUMBER_OF_BASE_OPS = None):
+def mutate_combination_winner(winner_combine_OPs):
     ## namespace
     ## Metalearners that learn across meta-levels 
     ## Should this be a hyperparameter as well too?
     ## The whole metagene should be copied
-    #NUMBER_OF_BASE_OPS: needs to be a dict sharing the keys of winner_combine_OPs and winner_cached_gene
     #each value would be the count of ops in each level
 
     ## TODO (hypothetical)
@@ -178,7 +177,7 @@ def mutate_combination_winner(winner_combine_OPs, winner_cached_gene, NUMBER_OF_
     ## and only allow a mutation that leads to better overall ancestral performance? 
 
     ##FIXME sample from range of metagene.keys()
-    gene_to_mutate_idx = choice(len(winner_combine_OPs))
+    #gene_to_mutate_idx = choice(len(winner_combine_OPs))
 
     dice_roll = random()
     if dice_roll < 0.3333: 
@@ -188,20 +187,19 @@ def mutate_combination_winner(winner_combine_OPs, winner_cached_gene, NUMBER_OF_
     else:
         mutation_function = mutate_combination_all
 
-    new_op_metagene = Dict()
-    new_cached_gene = Dict()
-    counter = 0 
-    for key in winner_combine_OPs:
+    #counter = 0 
+    #import pdb;pdb.set_trace()
+    #for key in winner_combine_OPs:
 
-        new_op_metagene[key] = winner_combine_OPs[key].copy() #FIXME slow?
-        new_cached_gene[key] = winner_cached_gene[key].copy() #FIXME slow?
+    # new_op_metagene[key] = winner_combine_OPs[key].copy() #FIXME slow?
+    # new_cached_gene[key] = winner_cached_gene[key].copy() #FIXME slow?
 
-        if counter == gene_to_mutate_idx:
-            gene_to_mutate = key
-        counter += 1
+    # if counter == gene_to_mutate_idx:
+    #     gene_to_mutate = key
+    # counter += 1
 
-    new_op_metagene[gene_to_mutate] = mutation_function(winner_combine_OPs.copy(), NUMBER_OF_BASE_OPS)
+    new_op_metagene = mutation_function(winner_combine_OPs.copy())
 
-    new_cached_gene[gene_to_mutate] =  _generate_cached_metalevels(new_op_metagene[gene_to_mutate])
+    new_cached_gene =  _generate_cached_metalevels(new_op_metagene)
     return new_op_metagene, new_cached_gene
    

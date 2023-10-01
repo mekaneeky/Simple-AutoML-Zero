@@ -1,12 +1,8 @@
 import numpy as np
 BETA = 0.05
-X_arr = np.array([[10,22, 5000, 300, 999],
-                      [1012,242, 50200, 3002, 999],
-                      [1013,232, 50400, 3001, 999],
-                      [101,212, 52000, 3300, 4999],
-                      [1,2, 500, 30, 99],
-                      [120,222, 50200, 3200, 9929],
-    ]).reshape(-1,5)
+X_arr = np.array([[10,10],
+                      
+    ]).reshape(-1,2)
 X_SHAPE = X_arr.shape
 y_true = X_arr // 2
 y_shape = y_true.shape

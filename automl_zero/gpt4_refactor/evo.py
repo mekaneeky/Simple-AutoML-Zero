@@ -106,6 +106,40 @@ def initialize_gene_population(X, y, memory_ref_dict, fitness_func, cached_metal
 
     return genes_list, fitness_list
 
+def initialize_OP_gene_population(X, y, memory_ref_dict, fitness_func, reference_gene,resolve_depth,
+                    NUMBER_OF_METALEVELS, NUMBER_OF_META_OPS, FIRST_LEVEL_TOTAL_OPS):
+    OP_genes_list = List()
+    OP_cache_list = List()
+    fitness_list = List()
+    
+    
+    
+    for i in range(POPULATION_COUNT):
+        print(i) if i % 10 == 0 else None
+
+        OP_gene, OP_cached_gene = create_OP_gene(METALEVEL_COUNT, NUMBER_OF_META_OPS, PRIOR_LEVEL_OPS)
+        if type(reference_gene) == list:
+            fitness = 0
+            accuracy = 0
+            for metagene in reference_gene:
+                _fitness, _accuracy = evaluate_individual(X, y, OP_cached_gene, metagene, fitness_func, memory_ref_dict,resolve_depth, MAX_ARG)
+                fitness += _fitness
+                accuracy += _accuracy #FIXME potential bug
+        else:
+            fitness, accuracy = evaluate_individual(X, y, OP_cached_gene, reference_gene, fitness_func, memory_ref_dict,resolve_depth, MAX_ARG)
+
+        if type(reference_gene) == list:
+            fitness_list.append(-accuracy / len(X) / len(reference_gene)) if accuracy else fitness_list.append(fitness)
+        else:
+            fitness_list.append(-accuracy / len(X)) if accuracy else fitness_list.append(fitness)
+        OP_genes_list.append(OP_gene)
+        OP_cache_list.append(OP_cached_gene)
+        
+
+    return OP_genes_list, OP_cache_list, fitness_list
+
+
+
 
 def initialize_genes(X, y, memory_ref_dict,NUMBER_OF_META_OPS):
     gene_setup = generate_gene(X[0].shape, y[0].shape, SETUP_FUNCTION, NUMBER_OF_META_OPS)
@@ -199,6 +233,7 @@ def hierarchical_resolve_genome(gene, cached_metalevels, memory_ref_dict, resolv
 
     return memory_ref_dict[1]
 
+#idx = (-arr).argsort()[:n]
 def run_tournament(fitness_list, contestant_indices):
     """
     Run a tournament among selected indices in the population. 
@@ -220,6 +255,14 @@ def tournament_selection(fitness_list, N):
 def evaluate_individual(X, y, cached_metalevels, new_metagene, fitness_func, memory_ref_dict, resolve_depth, MAX_ARG):
     new_fitness = 0
     new_accuracy = 0
+
+    if setup_function:
+            hierarchical_resolve_genome(
+                                gene=new_metagene["gene_setup"], 
+                                cached_metalevels= cached_metalevels,
+                                memory_ref_dict=memory_ref_dict,
+                                resolve_depth=SETUP_OP_DEPTH,
+                                MAX_ARG=MAX_ARG)
 
     for X_val, y_val in zip(X,y):        
         # Clear previous values to avoid leakage
@@ -268,24 +311,142 @@ def hierarchical_run_gene_evolution(X, y, iters=100000, evaluate_steps=10000, fi
         new_metagene = mutate_winner(population_list[tournament_winner_idx], len(memory_ref_dict))
         memory_ref_dict[2][:] = np.zeros(shape=memory_ref_dict[2].shape )
         
-        if setup_function:
-            hierarchical_resolve_genome(
-                                gene=new_metagene["gene_setup"], 
-                                cached_metalevels= cached_metalevels,
-                                memory_ref_dict=memory_ref_dict,
-                                resolve_depth=SETUP_OP_DEPTH,
-                                MAX_ARG=MAX_ARG)
-
         new_fitness, new_accuracy = evaluate_individual(X, y, cached_metalevels, new_metagene, fitness_func, memory_ref_dict, PRED_OP_DEPTH, MAX_ARG)
         
-
         ## Append to population list
-        population_list.append(new_metagene)
+        population_list.append(new_metagene) #FIXME where to add the cached_metalevels
         population_list.pop(0)
         fitness_list.append(-new_accuracy/len(X) if accuracy else new_fitness)
         fitness_list.pop(0)
 
     return population_list, fitness_list, i
+
+
+
+def hierarchical_run_op_evolution(OP_population, OP_cache,OP_fitness_list, X, y, iters=1000, evaluate_steps=10000,reference_metagene= None, fitness_func=None, 
+                                   N=10, memory_ref_dict=None, accuracy=False,resolve_depth=None, MAX_ARG=2):
+    """
+    This function is focused on evolving the hierarchical operations (OP genes) 
+    rather than the function genes.
+    """
+    ## This function is not yet complete. This is a GPT4 generated blueprint
+    for i in range(iters):
+        if i % 10 == 0:
+            print(f"BEST FITNESS at iteration {i} is {max(OP_fitness_list)}")
+        
+        ## Tournament selection
+        tournament_winner_idx = tournament_selection(OP_fitness_list, N)
+        new_op_gene, new_cached_gene = mutate_combination_winner(OP_population[tournament_winner_idx])
+        
+        ## Evaluate the new OP gene 
+        if type(reference_metagene) == list:
+            new_fitness = 0
+            new_accuracy = 0
+            for single_reference_metagene in reference_metagene:
+                _new_fitness, _new_accuracy = evaluate_individual(X, y, new_cached_gene, \
+                                                            single_reference_metagene, fitness_func, \
+                                                            memory_ref_dict,resolve_depth, MAX_ARG)
+                new_fitness += _new_fitness
+                new_accuracy += _new_accuracy
+        else:
+            new_fitness, new_accuracy = evaluate_individual(X, y, new_cached_gene, \
+                                                            reference_metagene, fitness_func, \
+                                                            memory_ref_dict,resolve_depth, MAX_ARG)
+        ## Append to OP population list
+        OP_population.append(new_op_gene)
+        OP_population.pop(0)
+        OP_cache.append(new_cached_gene)
+        OP_cache.pop(0)
+        OP_fitness_list.append(-new_accuracy/len(X) if accuracy else new_fitness)
+        OP_fitness_list.pop(0)
+
+    return OP_population, OP_cache, OP_fitness_list, i
+
+
+def cyclical_evolution(X, y, iters=100000, evaluate_steps=10000, fitness_func=None, 
+                       gene_population_list=None, gene_fitness_list=None, 
+                       op_population=None, op_cache=None, op_fitness_list=None,
+                       setup_function=True, setup_OP_dict=setup_OPs, SETUP_OP_DEPTH=None, 
+                       pred_OP_dict=pred_OPs, PRED_OP_DEPTH=None, learn_function=True, 
+                       learn_OP_dict=learn_OPs, LEARN_OP_DEPTH=None, N=10, 
+                       memory_ref_dict=None, accuracy=False, MAX_ARG=2, cycles=10):
+    
+    for cycle in range(cycles):
+        print(f"Starting Cycle {cycle + 1}")
+        
+        # Select the winner of the function genes as reference_metagene for OP genes evolution
+        winner_idx_function = tournament_selection(gene_fitness_list, N)
+        reference_metagene = gene_population_list[winner_idx_function]
+        
+        # Evolve the OP genes using the winner of the function genes as reference_metagene
+        evolved_op_population, evolved_op_cache, evolved_op_fitness_list, _ = hierarchical_run_op_evolution(
+            OP_population=op_population, 
+            OP_cache=op_cache, 
+            X=X, 
+            y=y, 
+            iters=iters, 
+            evaluate_steps=evaluate_steps, 
+            fitness_func=fitness_func, 
+            fitness_list=op_fitness_list, 
+            N=N, 
+            memory_ref_dict=memory_ref_dict, 
+            accuracy=accuracy, 
+            MAX_ARG=MAX_ARG,
+            reference_metagene=reference_metagene  # Use the winner of the function genes as reference_metagene
+        )
+        
+        # Select the winner of the OP genes as cached_metalevels for function genes evolution
+        winner_idx_op = tournament_selection(evolved_op_fitness_list, N)
+        cached_metalevels = evolved_op_cache[winner_idx_op]
+        
+        # Evolve the function genes using the winner of the OP genes as cached_metalevels
+        evolved_gene_population, evolved_gene_fitness_list, _ = hierarchical_run_gene_evolution(
+            X=X, 
+            y=y, 
+            iters=iters, 
+            evaluate_steps=evaluate_steps, 
+            fitness_func=fitness_func, 
+            population_list=gene_population_list, 
+            fitness_list=gene_fitness_list, 
+            setup_function=setup_function, 
+            setup_OP_dict=setup_OP_dict, 
+            SETUP_OP_DEPTH=SETUP_OP_DEPTH, 
+            pred_OP_dict=pred_OP_dict, 
+            PRED_OP_DEPTH=PRED_OP_DEPTH, 
+            learn_function=learn_function, 
+            learn_OP_dict=learn_OP_dict, 
+            LEARN_OP_DEPTH=LEARN_OP_DEPTH, 
+            N=N, 
+            memory_ref_dict=memory_ref_dict, 
+            accuracy=accuracy, 
+            cached_metalevels=cached_metalevels,  # Use the winner of the OP genes as cached_metalevels
+            MAX_ARG=MAX_ARG
+        )
+        
+        # Update the populations and fitness lists for the next cycle
+        op_population = evolved_op_population
+        op_cache = evolved_op_cache
+        op_fitness_list = evolved_op_fitness_list
+        gene_population_list = evolved_gene_population
+        gene_fitness_list = evolved_gene_fitness_list
+        
+    return evolved_gene_population, evolved_gene_fitness_list, evolved_op_population, evolved_op_cache, evolved_op_fitness_list
+
+def select_functional_genes_for_op_evaluation(gene_population_list, gene_fitness_list, N, count):
+    selected_functional_genes = []
+    for _ in range(count):
+        winner_idx = tournament_selection(gene_fitness_list, N)
+        selected_functional_genes.append(gene_population_list[winner_idx])
+    return selected_functional_genes
+
+def select_op_genes_for_functional_evaluation(op_population, op_cache, op_fitness_list, N, count):
+    selected_op_genes = []
+    selected_op_cache = []
+    for _ in range(count):
+        winner_idx = tournament_selection(op_fitness_list, N)
+        selected_op_genes.append(op_population[winner_idx])
+        selected_op_cache.append(op_cache[winner_idx])  # Assuming op_cache is available and aligned with op_population
+    return selected_op_genes, selected_op_cache
 
 #@njit(cache=True)
 def create_OP_gene(METALEVEL_COUNT, NUMBER_OF_META_OPS, PRIOR_LEVEL_OPS):
